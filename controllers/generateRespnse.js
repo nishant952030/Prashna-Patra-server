@@ -1,33 +1,32 @@
 const { default: Groq } = require("groq-sdk/index.mjs");
 
 const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY, // Store your API key in a .env file
+    apiKey: process.env.GROQ_API_KEY,
 });
 
 async function runDeepSeek(req, res) {
     try {
         const { description, questionCount, difficulty, questionType } = req.body.formData;
-        console.log("no.of questions",req.body.formData)
-        const topic= `topic: ${description} with ${questionCount} questions having difficulty ${difficulty} and should be of type :${questionType}. if the type is mixed then  use both mcqs and the true and  false type questions mixed`
-        if (!topic) {
-            return res.status(400).json({ error: "Topic is required" });
+
+        if (!description) {
+            return res.status(400).json({ error: "Topic description is required" });
         }
 
-        // Strict rule to enforce JSON format
+        const topic = `Topic: ${description} with ${questionCount} questions, difficulty: ${difficulty}, type: ${questionType}. If mixed, use both MCQs and true/false questions.`;
+
         const rule = `
-Generate exactly ${questionCount} multiple-choice questions in JSON format following these rules:
+Return a **valid JSON** with an array called "questions" containing **exactly ${questionCount}** multiple-choice questions.
 
-1. The response must be a valid JSON object.
-2. The JSON must contain an array called "questions" with exactly ${questionCount} questions.
-  (point 2 is important, if it is not matched then it breaks the flow of the questions)
-3. Each question object should have:
-   - "question" (string): The question text.
-   - "options" (array): An array of exactly four answer choices.
-   - "correctAnswer" (string): The correct answer, which MUST be one of the options.
-4. Do NOT include any explanations, metadata, or additional text—just return the JSON.
+1. Ensure the JSON is correctly formatted without extra text.
+2. Each question should have:
+   - "question": The question text.
+   - "options": An array of exactly four answer choices.
+   - "correctAnswer": The correct answer (MUST be one of the options).
+3. Do not include explanations, extra formatting, or non-JSON text.
+4. Respond with **only** the JSON, nothing else.
 
-Now generate multiple-choice questions on the topic: **${topic}**`;
-
+Generate questions on: **${topic}**.
+`;
 
         const chatCompletion = await groq.chat.completions.create({
             model: "deepseek-r1-distill-llama-70b",
@@ -38,47 +37,56 @@ Now generate multiple-choice questions on the topic: **${topic}**`;
         });
 
         let responseText = chatCompletion.choices[0].message.content;
-        console.log(responseText)
+        console.log("Raw AI Response:", responseText);
 
-        // Extract only JSON using regex
+        // Extract JSON correctly
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-            console.error("AI did not return valid JSON:", responseText);
+            console.error("Invalid JSON format from AI:", responseText);
             return res.status(500).json({ error: "Invalid JSON format received from AI" });
         }
 
         let jsonResponse;
         try {
             jsonResponse = JSON.parse(jsonMatch[0]);
-            console.log(jsonResponse)
 
-            function shuffleArray(array) {
-                // Shuffle an array in place using the Fisher-Yates algorithm
-                for (let i = array.length - 1; i > 0; i--) {
+            if (jsonResponse.questions.length !== questionCount) {
+                console.error(`Expected ${questionCount} questions, but got ${jsonResponse.questions.length}`);
+                return res.status(500).json({ error: "Incorrect number of questions generated", success: false });
+            }
+
+            function shuffleArray(array, correctAnswer) {
+                let shuffled = [...array];
+                let correctIndex = shuffled.indexOf(correctAnswer);
+
+                for (let i = shuffled.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
                 }
+
+                if (!shuffled.includes(correctAnswer)) {
+                    shuffled[0] = correctAnswer;
+                }
+
+                return shuffled;
             }
 
             jsonResponse.questions = jsonResponse.questions.map(q => {
                 if (!q.options.includes(q.correctAnswer)) {
                     console.warn(`Invalid correct answer detected: ${q.correctAnswer}`);
-                    return q; // Skip modifying this question if incorrect
+                    return q;
                 }
 
-                // Shuffle options while keeping the correct answer inside
-                shuffleArray(q.options);
-
+                q.options = shuffleArray(q.options, q.correctAnswer);
                 return q;
             });
 
-
         } catch (error) {
-            console.error("Invalid JSON response after cleaning:", jsonMatch[0]);
-            return res.status(500).json({ error: "Failed to parse cleaned JSON" });
+            console.error("Failed to parse JSON:", jsonMatch[0]);
+            return res.status(500).json({ error: "Failed to parse cleaned JSON", success: false });
         }
 
-        return res.json({jsonResponse, success:true});
+        return res.json({ jsonResponse, success: true });
 
     } catch (error) {
         console.error("Error fetching response:", error);

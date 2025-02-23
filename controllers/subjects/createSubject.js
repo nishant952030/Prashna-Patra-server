@@ -6,7 +6,7 @@ const createSubject = async (req, res) => {
         const userId = req.userId;
 
         // Check if subject already exists for this user
-        const existingSubject = await Subject.findOne({ subject, createdBy: userId });
+        const existingSubject = await Subject.findOne({subjectName: subject, createdBy: userId });
         if (existingSubject) {
             return res.status(400).json({ message: "Subject already exists!",success:false });
         }
