@@ -49,12 +49,6 @@ Generate questions on: **${topic}**.
         let jsonResponse;
         try {
             jsonResponse = JSON.parse(jsonMatch[0]);
-
-            if (jsonResponse.questions.length !== questionCount) {
-                console.error(`Expected ${questionCount} questions, but got ${jsonResponse.questions.length}`);
-                return res.status(500).json({ error: "Incorrect number of questions generated", success: false });
-            }
-
             function shuffleArray(array, correctAnswer) {
                 let shuffled = [...array];
                 let correctIndex = shuffled.indexOf(correctAnswer);
