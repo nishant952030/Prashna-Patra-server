@@ -30,7 +30,6 @@ const googleAuth = async (req, res) => {
             httpOnly: true,
             secure: true,
             sameSite: "none",
-            domain: "https://www.prashnapatra.co.in",
             path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
