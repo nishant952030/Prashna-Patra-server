@@ -20,7 +20,7 @@ const app = express();
 app.use(cookieParser());
 app.use(express.json());
 app.use(cors({
-    origin:[ "https://prashna-patra-client.vercel.app","http://localhost:3000","www.prashnapatra.co.in"], 
+    origin:[ "https://prashna-patra-client.vercel.app","http://localhost:3000","https://www.prashnapatra.co.in"], 
     credentials: true // ✅ Allows cookies to be sent/received
 }));
 

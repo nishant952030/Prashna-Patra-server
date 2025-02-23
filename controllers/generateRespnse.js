@@ -39,7 +39,7 @@ Generate questions on: **${topic}**.
         let responseText = chatCompletion.choices[0].message.content;
         console.log("Raw AI Response:", responseText);
 
-        // Extract JSON correctly
+       
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             console.error("Invalid JSON format from AI:", responseText);
