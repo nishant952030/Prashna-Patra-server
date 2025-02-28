@@ -8,6 +8,8 @@ const authroute = require("./routes/Authenticaton");
 const subjectRoute = require("./routes/subject");
 const paymentRoute = require("./routes/paymentRoute")
 const userRoute = require("./routes/userRoute")
+const unAuthRoute = require("./routes/unAuth")
+
 
 const connectDB = require("./connections/mongodb");
 const cookieParser = require("cookie-parser");
@@ -29,6 +31,7 @@ app.use("/auth", authroute);
 app.use("/subject", subjectRoute);
 app.use("/payment", paymentRoute);
 app.use("/user", userRoute);
+app.use("/unAuth", unAuthRoute);
 
 app.post("/logout", (req, res) => {
     res.clearCookie("token", { path: "/", httpOnly: true, secure: true, sameSite: "strict" });

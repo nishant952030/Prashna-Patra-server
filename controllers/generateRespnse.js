@@ -37,12 +37,12 @@ Generate questions on: **${topic}**.
         });
 
         let responseText = chatCompletion.choices[0].message.content;
-        console.log("Raw AI Response:", responseText);
+  
 
        
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-            console.error("Invalid JSON format from AI:", responseText);
+         
             return res.status(500).json({ error: "Invalid JSON format received from AI" });
         }
 
@@ -67,7 +67,7 @@ Generate questions on: **${topic}**.
 
             jsonResponse.questions = jsonResponse.questions.map(q => {
                 if (!q.options.includes(q.correctAnswer)) {
-                    console.warn(`Invalid correct answer detected: ${q.correctAnswer}`);
+                    
                     return q;
                 }
 
@@ -76,7 +76,7 @@ Generate questions on: **${topic}**.
             });
 
         } catch (error) {
-            console.error("Failed to parse JSON:", jsonMatch[0]);
+           
             return res.status(500).json({ error: "Failed to parse cleaned JSON", success: false });
         }
 
